@@ -42,19 +42,18 @@ class DebateResponse(BaseModel):
     messages: List[Dict[str, Any]]
     topic: str
 
-# Mistral API configuration
 def get_llm_config():
-    # Lấy API Key của Gemini từ biến môi trường
-    api_key = os.getenv("GEMINI_API_KEY")
+    # Đổi từ MISTRAL_API_KEY sang GEMINI_API_KEY
+    api_key = os.getenv("GEMINI_API_KEY") 
     if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY chưa được cấu hình trong GitHub Secrets")
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY chưa được cấu hình")
     
     return {
         "config_list": [
             {
-                "model": "gemini-1.5-flash", # Hoặc gemini-1.5-pro
+                "model": "gemini-1.5-flash", # Đổi tên mô hình
                 "api_key": api_key,
-                "api_type": "google"
+                "api_type": "google"        # Đổi loại API sang google
             }
         ]
     }
@@ -90,8 +89,7 @@ async def start_debate(request: DebateRequest):
         pro_agent, con_agent = create_debate_agents()
         
         # Create group chat with simpler configuration
-        groupchat = autogen.GroupChat(
-            agents=[pro_agent, con_agent],
+manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=get_llm_config())            agents=[pro_agent, con_agent],
             messages=[],
             max_round=4,  # Maximum 4 turns as specified
             speaker_selection_method="round_robin",  # Add round robin turn-taking
