@@ -44,12 +44,20 @@ class DebateResponse(BaseModel):
 
 # Mistral API configuration
 def get_llm_config():
-    api_key = os.getenv("MISTRAL_API_KEY")
+    # Lấy API Key của Gemini từ biến môi trường
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="MISTRAL_API_KEY not configured. Please set MISTRAL_API_KEY in your .env file")
-
-    return {"config_list": [{"model": "mistral-small", "api_type": "mistral", "base_url": "https://api.mistral.ai/v1", "api_key": api_key}]}
-
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY chưa được cấu hình trong GitHub Secrets")
+    
+    return {
+        "config_list": [
+            {
+                "model": "gemini-1.5-flash", # Hoặc gemini-1.5-pro
+                "api_key": api_key,
+                "api_type": "google"
+            }
+        ]
+    }
 def create_debate_agents():
     """Create the debate agents with specific roles"""
     llm_config = get_llm_config()
