@@ -33,11 +33,11 @@ class DebateResponse(BaseModel):
     messages: List[Dict[str, Any]]
     topic: str
 
-# CẤU HÌNH GEMINI TẠI ĐÂY
+# CẤU HÌNH DÀNH RIÊNG CHO GEMINI
 def get_llm_config():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY không tồn tại trong GitHub Secrets")
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing in Secrets")
     return {
         "config_list": [
             {
@@ -81,7 +81,7 @@ async def start_debate(request: DebateRequest):
             llm_config=get_llm_config()
         )
         
-        debate_prompt = f"Topic: {request.topic}. ProAgent vs ConAgent."
+        debate_prompt = f"Topic: {request.topic}. ProAgent argues FOR, ConAgent argues AGAINST."
         await asyncio.to_thread(init_autogen_chat, manager, pro_agent, debate_prompt)
 
         messages = []
