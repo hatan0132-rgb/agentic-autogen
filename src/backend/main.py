@@ -85,54 +85,47 @@ def init_autogen_chat(manager, agent, debate_prompt):
 async def start_debate(request: DebateRequest):
     """Start a debate between Pro and Con agents on the given topic"""
     try:
-        # Create agents
+        # 1. Khởi tạo Agents
         pro_agent, con_agent = create_debate_agents()
-        
-        # Create group chat with simpler configuration
-manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=get_llm_config())            agents=[pro_agent, con_agent],
-            messages=[],
-            max_round=4,  # Maximum 4 turns as specified
-            speaker_selection_method="round_robin",  # Add round robin turn-taking
-            allow_repeat_speaker=False,  # Prevent the same agent from speaking twice in a row
+
+        # 2. Cấu hình GroupChat (Sửa lỗi ngoặc ở đây)
+        groupchat = autogen.GroupChat(
+            agents=[pro_agent, con_agent], 
+            messages=[], 
+            max_round=4,
+            speaker_selection_method="round_robin",
+            allow_repeat_speaker=False
         )
-        
+
+        # 3. Khởi tạo Manager
         manager = autogen.GroupChatManager(
-            groupchat=groupchat,
-            llm_config=get_llm_config(),
+            groupchat=groupchat, 
+            llm_config=get_llm_config()
         )
-        
-        # Start the debate with a simpler prompt
+
+        # 4. Bắt đầu tranh luận
         debate_prompt = f"Debate topic: {request.topic}. ProAgent argues FOR, ConAgent argues AGAINST. Keep it respectful and engaging."
         
-        # Run the debate
         try:
-            # Try AutoGen first
-            await asyncio.to_thread(
-                init_autogen_chat,
-                manager,
-                pro_agent,
-                debate_prompt
-            )
+            await asyncio.to_thread(init_autogen_chat, manager, pro_agent, debate_prompt)
         except Exception as chat_error:
-            # Return a mock response if AutoGen fails
             print(f"AutoGen chat failed: {chat_error}")
-            
             mock_messages = [
-                {"role": "ProAgent", "content": f"I will argue in favor of: {request.topic}. This is an important topic that deserves careful consideration."},
-                {"role": "ConAgent", "content": f"I will argue against: {request.topic}. There are valid concerns that need to be addressed."}
+                {"role": "ProAgent", "content": f"I will argue in favor of: {request.topic}."},
+                {"role": "ConAgent", "content": f"I will argue against: {request.topic}."}
             ]
             return DebateResponse(topic=request.topic, messages=mock_messages)
-        
-        # Extract messages from the chat result
+
+        # 5. Trả về kết quả
         messages = []
         for msg in groupchat.messages:
             if msg.get("content") and msg.get("name"):
-                # Clean up the message format to avoid API issues
-                clean_msg = {
-                    "role": msg["name"],
-                    "content": msg["content"]
-                }
-                messages.append(clean_msg)
+                messages.append({"role": msg["name"], "content": msg["content"]})
+        
+        return DebateResponse(topic=request.topic, messages=messages)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Debate failed: {str(e)}")
         
         return DebateResponse(
             topic=request.topic,
